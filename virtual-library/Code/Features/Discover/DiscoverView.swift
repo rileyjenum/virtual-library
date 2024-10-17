@@ -1,5 +1,5 @@
 //
-//  Home.swift
+//  DiscoverView.swift
 //  virtual-library
 //
 //  Created by Riley Jenum on 17/10/24.
@@ -7,10 +7,10 @@
 
 import SwiftUI
 
-struct Home: View {
+struct DiscoverView: View {
     
     @State private var searchText: String = ""
-    @State private var activeTab: Tab = .trending
+    @State private var activeTab: DiscoverTab = .trending
     @FocusState private var isSearching: Bool
     @Environment(\.colorScheme) private var scheme
     @Namespace private var animation
@@ -86,7 +86,7 @@ struct Home: View {
                 
                 ScrollView(.horizontal) {
                     HStack(spacing: 12) {
-                        ForEach(Tab.allCases, id: \.rawValue) { tab in
+                        ForEach(DiscoverTab.allCases, id: \.rawValue) { tab in
                             Button(action: {
                                 withAnimation {
                                     activeTab = tab
@@ -101,7 +101,7 @@ struct Home: View {
                                         if activeTab == tab {
                                             Capsule()
                                                 .fill(Color.primary)
-                                                .matchedGeometryEffect(id: "ACTIVETAB", in: animation)
+                                                .matchedGeometryEffect(id: "activeDiscoverTab", in: animation)
                                         } else {
                                             Capsule()
                                                 .fill(.background)
@@ -164,5 +164,5 @@ struct CustomScrollTargetBehavior: ScrollTargetBehavior {
 }
 
 #Preview {
-    Home()
+    DiscoverView()
 }

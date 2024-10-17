@@ -10,7 +10,7 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         NavigationStack {
-            Home()
+            TabBarView()
                 .toolbar(.hidden, for: .navigationBar)
         }
     }
