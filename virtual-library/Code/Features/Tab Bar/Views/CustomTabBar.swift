@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CustomTabBar: View {
     var activeForeground: Color = .white
-    var activeBackground: Color = .blue
+    var activeBackground: Color = .black
     @Binding var activeTab: MainTab
     @State private var tabLocation: CGRect = .zero
 
