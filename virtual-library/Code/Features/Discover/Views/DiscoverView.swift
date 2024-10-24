@@ -11,7 +11,8 @@ struct DiscoverView: View {
     
     @State private var searchText: String = ""
     @State private var activeTab: DiscoverTab = .trending
-    @FocusState private var isSearching: Bool
+    @State private var isSearching: Bool = false
+    @FocusState private var isTyping: Bool
     @Environment(\.colorScheme) private var scheme
     @Namespace private var animation
     
@@ -24,7 +25,10 @@ struct DiscoverView: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 ExpandableNavigationBar()
             }
-            .animation(.snappy(duration: 0.3, extraBounce: 0), value: isSearching)
+            .animation(.snappy(duration: 0.3, extraBounce: 0), value: isTyping)
+            .onTapGesture {
+                isTyping = false
+            }
             
         }
         .scrollTargetBehavior(CustomScrollTargetBehavior())
@@ -39,7 +43,7 @@ struct DiscoverView: View {
             let minY = proxy.frame(in: .scrollView(axis: .vertical)).minY
             let scrollViewHeight = proxy.bounds(of: .scrollView(axis: .vertical))?.height ?? 0
             let scaleProgress = minY > 0 ? 1 + (max(min(minY / scrollViewHeight, 1), 0) * 0.7) : 1
-            let progress = isSearching ? 1 : max(min( -minY / 70, 1), 0)
+            let progress = isTyping ? 1 : max(min( -minY / 70, 1), 0)
             VStack(spacing: 10) {
                 // Title
                 Text(title)
@@ -50,17 +54,24 @@ struct DiscoverView: View {
                 
                 // Search bar
                 HStack(spacing: 12) {
-                    Image(systemName: "magnifyingglass")
+                    Image(systemName: isSearching ? "arrow.left" : "magnifyingglass")
                         .font(.title3)
+                        .onTapGesture {
+                            withAnimation {
+                                isSearching = false
+                            }
+                        }
                     
                     TextField("Search for a book", text: $searchText) {
-                        //
+                        withAnimation {
+                            isSearching = true
+                        }
                     }
-                    .focused($isSearching)
+                    .focused($isTyping)
                     
-                    if isSearching {
+                    if isTyping {
                         Button {
-                            isSearching = false
+                            isTyping = false
                         } label: {
                             Image(systemName: "xmark")
                                 .font(.title3)
@@ -80,52 +91,53 @@ struct DiscoverView: View {
                         .shadow(color: .gray.opacity(0.25), radius: 5, x: 0, y: 5)
                         .padding(.top, -progress * 190)
                         .padding(.horizontal, -progress * 15)
-                        .padding(.bottom, -progress * 65)
+                        .padding(.bottom, isSearching ? 0 : -progress * 65)
                     
                 }
-                
-                ScrollView(.horizontal) {
-                    HStack(spacing: 12) {
-                        ForEach(DiscoverTab.allCases, id: \.rawValue) { tab in
-                            Button(action: {
-                                withAnimation {
-                                    activeTab = tab
-                                }
-                            }) {
-                                Text(tab.rawValue)
-                                    .font(.callout)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 15)
-                                    .foregroundStyle(activeTab == tab ? (scheme == .dark ? .black : .white) : Color.primary)
-                                    .background {
-                                        if activeTab == tab {
-                                            Capsule()
-                                                .fill(Color.primary)
-                                                .matchedGeometryEffect(id: "activeDiscoverTab", in: animation)
-                                        } else {
-                                            Capsule()
-                                                .fill(.background)
-                                        }
+                if !isSearching {
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 12) {
+                            ForEach(DiscoverTab.allCases, id: \.rawValue) { tab in
+                                Button(action: {
+                                    withAnimation {
+                                        activeTab = tab
                                     }
+                                }) {
+                                    Text(tab.rawValue)
+                                        .font(.callout)
+                                        .padding(.vertical, 8)
+                                        .padding(.horizontal, 15)
+                                        .foregroundStyle(activeTab == tab ? (scheme == .dark ? .black : .white) : Color.primary)
+                                        .background {
+                                            if activeTab == tab {
+                                                Capsule()
+                                                    .fill(Color.primary)
+                                                    .matchedGeometryEffect(id: "activeDiscoverTab", in: animation)
+                                            } else {
+                                                Capsule()
+                                                    .fill(.background)
+                                            }
+                                        }
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
+                    .scrollIndicators(.hidden)
+                    .frame(height: 50)
                 }
-                .scrollIndicators(.hidden)
-                .frame(height: 50)
                 
                 
             }
             .padding(.top, 25)
             .safeAreaPadding(.horizontal, 15)
-            .offset(y: minY < 0 || isSearching ? -minY : 0)
+            .offset(y: minY < 0 || isTyping ? -minY : 0)
             .offset(y: -progress * 65)
             
         }
-        .frame(height: 190)
+        .frame(height: isSearching ? 145 : 190)
         .padding(.bottom, 10)
-        .padding(.bottom, isSearching ? -65 : 0)
+        .padding(.bottom, isTyping ? -65 : 0)
     }
     
     // Dummy messages view

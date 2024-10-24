@@ -60,9 +60,14 @@ struct TabBarView: View {
                     }
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: 60)
+            }
             
             CustomTabBar(activeTab: $activeTab)
+                .frame(height: 60)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }
 
