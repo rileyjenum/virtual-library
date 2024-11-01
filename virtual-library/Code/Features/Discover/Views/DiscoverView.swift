@@ -12,15 +12,16 @@ struct DiscoverView: View {
     @State private var searchText: String = ""
     @State private var activeTab: DiscoverTab = .trending
     @State private var isSearching: Bool = false
+    @State private var showDetailView: Bool = false
+    @State private var selectedBook: Book?
+    @State private var animateCurrentBook: Bool = false
     @FocusState private var isTyping: Bool
     @Environment(\.colorScheme) private var scheme
     @Namespace private var animation
     
     var body: some View {
         ScrollView(.vertical) {
-            LazyVStack(spacing: 15) {
-                DummyMessagesView()
-            }
+            BookScrollView(showDetailView: $showDetailView, selectedBook: $selectedBook, animateCurrentBook: $animateCurrentBook, animation: animation)
             .safeAreaPadding(15)
             .safeAreaInset(edge: .top, spacing: 0) {
                 ExpandableNavigationBar()
@@ -34,9 +35,21 @@ struct DiscoverView: View {
         .scrollTargetBehavior(CustomScrollTargetBehavior())
         .background(.gray.opacity(0.15))
         .contentMargins(.top, 130, for: .scrollIndicators)
+        .overlay {
+            if let selectedBook, showDetailView {
+                DetailView(showDetailView: $showDetailView, animation: animation, book: selectedBook)
+                    .transition(.asymmetric(insertion: .identity, removal: .offset(y: 5)))
+            }
+        }
+        .onChange(of: showDetailView) { oldValue, newValue in
+            if !newValue {
+                withAnimation(.easeInOut(duration: 0.15).delay(0.4)) {
+                    animateCurrentBook = false
+                }
+            }
+        }
     }
     
-    // Dummy messages view
     @ViewBuilder
     func ExpandableNavigationBar(_ title: String = "Discover") -> some View {
         GeometryReader {proxy in
@@ -138,28 +151,6 @@ struct DiscoverView: View {
         .frame(height: isSearching ? 145 : 190)
         .padding(.bottom, 10)
         .padding(.bottom, isTyping ? -65 : 0)
-    }
-    
-    // Dummy messages view
-    @ViewBuilder
-    func DummyMessagesView() -> some View {
-        ForEach(0..<200, id: \.self) { _ in
-            HStack(spacing: 12) {
-                Circle()
-                    .frame(width: 55, height: 55)
-                VStack(alignment: .leading, spacing: 6) {
-                    Rectangle()
-                        .frame(width: 140, height: 8)
-                    Rectangle()
-                        .frame(height: 8)
-                    Rectangle()
-                        .frame(width: 80, height: 8)
-                    
-                }
-            }
-            .foregroundStyle(.gray.opacity(0.4))
-            .padding(.horizontal, 15)
-        }
     }
 }
 

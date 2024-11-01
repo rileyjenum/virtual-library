@@ -8,13 +8,15 @@
 import SwiftUI
 
 struct DetailView: View {
+    
     @Binding var showDetailView: Bool
     @State private var animateContent: Bool = false
     @State private var offsetAnimation: Bool = false
-
     var animation: Namespace.ID
     var book: Book
+    
     var body: some View {
+        ScrollView(.vertical, showsIndicators: true) {
         VStack(spacing: 15) {
             Button {
                 withAnimation(.easeOut(duration: 0.2)) {
@@ -76,12 +78,12 @@ struct DetailView: View {
                 .overlay(alignment: .top, content: {
                     BookDetails()
                 })
-                .padding(.leading, 30)
                 .padding(.top, -180)
                 .zIndex(0)
                 .opacity(animateContent ? 1 : 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+//        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background {
             Rectangle()
                 .fill(.white)
@@ -129,27 +131,29 @@ struct DetailView: View {
                         .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity)
-
             }
             
             Divider()
                 .padding(.top, 25)
             
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 15) {
-                    Text("About the book")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum")
-                        .font(.callout)
-                        .foregroundColor(.gray)
-                    
-                }
-                .padding(.bottom, 15)
-                .padding(.top, 20)
+            VStack(spacing: 15) {
+                Text("About the book")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum")
+                    .font(.callout)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.horizontal, 35)
+            .padding(.bottom, 15)
+            .padding(.top, 20)
+            
             Button {
                 
             } label: {
@@ -160,23 +164,20 @@ struct DetailView: View {
                     .padding(.vertical, 10)
                     .background {
                         Capsule()
-                            .fill(.blue.gradient)
+                            .fill(.black.gradient)
                     }
                     .foregroundColor(.white)
-
             }
             .padding(.bottom, 15)
-
-
         }
         .padding(.top, 180)
-        .padding([.top, .horizontal], 15)
         .offset(y: offsetAnimation ? 0 : 100)
         .opacity(offsetAnimation ? 1 : 0)
-
     }
+
 }
 
 #Preview {
-    Home()
+    DiscoverView()
 }
+
