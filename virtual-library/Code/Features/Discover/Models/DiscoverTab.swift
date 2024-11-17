@@ -7,9 +7,8 @@
 
 enum DiscoverTab: String, CaseIterable {
     
-    case trending = "Trending"
-    case fiction = "Fiction"
-    case nonFiction = "Non-Fiction"
-    case romance = "Romance"
+    case top = "Top"
+    case books = "Books"
+    case users = "Users"
 
 }

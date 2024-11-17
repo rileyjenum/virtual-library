@@ -10,12 +10,14 @@ import SwiftUI
 struct DiscoverView: View {
     
     @State private var searchText: String = ""
-    @State private var activeTab: DiscoverTab = .trending
+    @State private var activeTab: DiscoverTab = .top
     @State private var isSearching: Bool = false
     @State private var showDetailView: Bool = false
     @State private var bookResults: [Book] = []
     @State private var selectedBook: Book?
     @State private var animateCurrentBook: Bool = false
+    @State private var recentSearches: [String] = []
+
     @FocusState private var isTyping: Bool
     @Environment(\.colorScheme) private var scheme
     @Namespace private var animation
@@ -26,16 +28,47 @@ struct DiscoverView: View {
     
     var body: some View {
         ScrollView(.vertical) {
-            BookScrollView(showDetailView: $showDetailView, selectedBook: $selectedBook, animateCurrentBook: $animateCurrentBook, bookResults: $bookResults, animation: animation)
+            Group {
+                if searchText.isEmpty {
+                    ForEach(recentSearches, id: \.self) { search in
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.gray)
+                            
+                            Text(search) // Ensure the entire text is displayed
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .lineLimit(1) // Keep one line
+                                .truncationMode(.tail) // Truncate with ellipsis if too long
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                RecentSearchesManager.shared.deleteSearch(search)
+                                recentSearches = RecentSearchesManager.shared.loadSearches()
+                            }) {
+                                Image(systemName: "xmark")
+                                    .foregroundColor(.gray)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                        .onTapGesture {
+                            withAnimation {
+                                searchText = search
+                            }
+                        }
+                    }
+                } else {
+                    BookScrollView(showDetailView: $showDetailView, selectedBook: $selectedBook, animateCurrentBook: $animateCurrentBook, bookResults: $bookResults, animation: animation)
+                }
+            }
             .safeAreaPadding(15)
             .safeAreaInset(edge: .top, spacing: 0) {
                 ExpandableNavigationBar()
             }
             .animation(.snappy(duration: 0.3, extraBounce: 0), value: isTyping)
-            .onTapGesture {
-                isTyping = false
-            }
-            
         }
         .scrollTargetBehavior(CustomScrollTargetBehavior())
         .background(.gray.opacity(0.15))
@@ -53,7 +86,17 @@ struct DiscoverView: View {
                 }
             }
         }
+        .onAppear {
+            recentSearches = RecentSearchesManager.shared.loadSearches()
+        }
     }
+    
+    private func saveRecentSearch() {
+        guard !searchText.isEmpty else { return }
+        RecentSearchesManager.shared.saveSearch(searchText)
+        recentSearches = RecentSearchesManager.shared.loadSearches()
+    }
+
     
     @ViewBuilder
     func ExpandableNavigationBar(_ title: String = "Discover") -> some View {
@@ -77,6 +120,7 @@ struct DiscoverView: View {
                         .onTapGesture {
                             withAnimation {
                                 isSearching = false
+                                searchText = ""
                             }
                         }
                     
@@ -86,8 +130,9 @@ struct DiscoverView: View {
                         .onChange(of: searchText) {
                             debounceSearch()
                         }
-                    
-                    
+                        .onSubmit {
+                            saveRecentSearch()
+                        }
                     
                     if isTyping {
                         Button {
@@ -111,10 +156,10 @@ struct DiscoverView: View {
                         .shadow(color: .gray.opacity(0.25), radius: 5, x: 0, y: 5)
                         .padding(.top, -progress * 190)
                         .padding(.horizontal, -progress * 15)
-                        .padding(.bottom, isSearching ? 0 : -progress * 65)
+                        .padding(.bottom, !isSearching ? 0 : -progress * 65)
                     
                 }
-                if !isSearching {
+                if isSearching {
                     ScrollView(.horizontal) {
                         HStack(spacing: 12) {
                             ForEach(DiscoverTab.allCases, id: \.rawValue) { tab in
@@ -155,17 +200,13 @@ struct DiscoverView: View {
             .offset(y: -progress * 65)
             
         }
-        .frame(height: isSearching ? 145 : 190)
+        .frame(height: !isSearching ? 145 : 190)
         .padding(.bottom, 10)
         .padding(.bottom, isTyping ? -65 : 0)
     }
     
-    // Debounced Search Function
     private func debounceSearch() {
-        // Invalidate any existing timer
         debounceTimer?.invalidate()
-        
-        // Set up a new timer to trigger performSearch after 2 seconds
         debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
             performSearch()
         }
@@ -209,4 +250,34 @@ struct CustomScrollTargetBehavior: ScrollTargetBehavior {
 
 #Preview {
     DiscoverView()
+}
+
+
+class RecentSearchesManager {
+    static let shared = RecentSearchesManager()
+    private let key = "RecentSearchesKey"
+
+    private init() {}
+
+    func saveSearch(_ search: String) {
+        var searches = loadSearches()
+                
+        if !searches.contains(search) {
+            searches.insert(search, at: 0)
+            searches = Array(searches.prefix(10))
+            UserDefaults.standard.set(searches, forKey: key)
+        }
+    }
+
+    func loadSearches() -> [String] {
+        UserDefaults.standard.array(forKey: key) as? [String] ?? []
+    }
+
+    func deleteSearch(_ search: String) {
+        var searches = loadSearches()
+        if let index = searches.firstIndex(of: search) {
+            searches.remove(at: index)
+            UserDefaults.standard.set(searches, forKey: key)
+        }
+    }
 }
