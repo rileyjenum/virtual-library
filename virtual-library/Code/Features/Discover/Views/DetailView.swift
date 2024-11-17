@@ -17,73 +17,95 @@ struct DetailView: View {
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
-        VStack(spacing: 15) {
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    offsetAnimation = false
-                }
-                
-                withAnimation(.easeOut(duration: 0.35).delay(0.1)) {
-                    animateContent = false
-                    showDetailView = false
-                }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.black)
-                    .contentShape(Rectangle())
-            }
-            .padding([.leading, .vertical], 15)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .opacity(animateContent ? 1 : 0)
-
-            
-            
-            GeometryReader {
-                let size = $0.size
-                HStack(spacing: 20) {
-                    Image(book.imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: (size.width - 30) / 2, height: size.height)
-                        .clipShape(CustomCorners(corners: [.topRight, .bottomRight], radius: 20))
-                        .matchedGeometryEffect(id: book.id, in: animation)
+            VStack(spacing: 15) {
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        offsetAnimation = false
+                    }
                     
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(book.title)
-                            .font(.title)
-                            .fontWeight(.semibold)
+                    withAnimation(.easeOut(duration: 0.35).delay(0.1)) {
+                        animateContent = false
+                        showDetailView = false
+                    }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.black)
+                        .contentShape(Rectangle())
+                }
+                .padding([.leading, .vertical], 15)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .opacity(animateContent ? 1 : 0)
+                
+                
+                
+                GeometryReader {
+                    let size = $0.size
+                    HStack(spacing: 20) {
                         
-                        Text("By \(book.author)")
-                            .font(.callout)
-                            .foregroundColor(.gray)
                         
-                        RatingView(rating: book.rating)
+                        AsyncImage(url: book.coverImageURL) { phase in
+                            switch phase {
+                            case .empty:
+                                // Placeholder or loading view
+                                ProgressView()
+                                    .frame(width: (size.width - 30) / 2, height: size.height)
+                                    .background(Color.gray.opacity(0.2))
+                                    .clipShape(CustomCorners(corners: [.topRight, .bottomRight], radius: 20))
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: (size.width - 30) / 2, height: size.height)
+                                    .clipShape(CustomCorners(corners: [.topRight, .bottomRight], radius: 20))
+                            case .failure:
+                                // Fallback view if the image fails to load
+                                Image(systemName: "photo")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: (size.width - 30) / 2, height: size.height)
+                                    .clipShape(CustomCorners(corners: [.topRight, .bottomRight], radius: 20))
+                                    .foregroundColor(.gray)
+                                    .background(Color.gray.opacity(0.2))
+                            }
+                        }
+                        .matchedGeometryEffect(id: book.id, in: animation)
+
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(book.title)
+                                .font(.title)
+                                .fontWeight(.semibold)
+                            
+                            Text("By \(book.author)")
+                                .font(.callout)
+                                .foregroundColor(.gray)
+                            
+                            RatingView(rating: book.rating ?? 4.0)
+
+                        }
+                        .padding(.trailing, 15)
+                        .padding(.top, 30)
+                        .offset(y: offsetAnimation ? 0 : 100)
+                        .opacity(offsetAnimation ? 1 : 0)
                         
                     }
-                    .padding(.trailing, 15)
-                    .padding(.top, 30)
-                    .offset(y: offsetAnimation ? 0 : 100)
-                    .opacity(offsetAnimation ? 1 : 0)
-
                 }
+                .frame(height: 220)
+                .zIndex(1)
+                
+                Rectangle()
+                    .fill(.white)
+                    .ignoresSafeArea()
+                    .overlay(alignment: .top, content: {
+                        BookDetails()
+                    })
+                    .padding(.top, -180)
+                    .zIndex(0)
+                    .opacity(animateContent ? 1 : 0)
             }
-            .frame(height: 220)
-            .zIndex(1)
-            
-            Rectangle()
-                .fill(.gray.opacity(0.04))
-                .ignoresSafeArea()
-                .overlay(alignment: .top, content: {
-                    BookDetails()
-                })
-                .padding(.top, -180)
-                .zIndex(0)
-                .opacity(animateContent ? 1 : 0)
         }
-    }
-//        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background {
             Rectangle()
                 .fill(.white)
@@ -174,7 +196,6 @@ struct DetailView: View {
         .offset(y: offsetAnimation ? 0 : 100)
         .opacity(offsetAnimation ? 1 : 0)
     }
-
 }
 
 #Preview {

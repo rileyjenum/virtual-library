@@ -14,11 +14,13 @@ struct BookScrollView: View {
     @Binding var showDetailView: Bool
     @Binding var selectedBook: Book?
     @Binding var animateCurrentBook: Bool
+    @Binding var bookResults: [Book]
+
     var animation: Namespace.ID
 
     var body: some View {
         VStack(spacing: 35) {
-            ForEach(sampleBooks) { book in
+            ForEach(bookResults) { book in
                 BookCardView(book)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -32,6 +34,7 @@ struct BookScrollView: View {
                             }
                         }
                     }
+                    .transition(AnyTransition.scale)
             }
         }
         .padding(.horizontal, 15)
@@ -51,13 +54,13 @@ struct BookScrollView: View {
                         .font(.caption)
                         .foregroundColor(.gray)
                     
-                    RatingView(rating: book.rating)
+                    RatingView(rating: book.rating ?? 4.0)
                         .padding(.top, 10)
                     
                     Spacer(minLength: 10)
                     
                     HStack(spacing: 4) {
-                        Text("\(book.bookViews)")
+                        Text("12")
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundColor(.blue)
@@ -87,14 +90,47 @@ struct BookScrollView: View {
                 .offset(x: animateCurrentBook && selectedBook?.id == book.id ? -20 : 0)
                 ZStack {
                     if !(showDetailView && selectedBook?.id == book.id) {
-                        Image(book.imageName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: size.width / 2, height: size.height)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .matchedGeometryEffect(id: book.id, in: animation)
-                            .shadow(color: .black.opacity(0.1), radius: 5, x: 5, y: 5)
-                            .shadow(color: .black.opacity(0.1), radius: 5, x: -5, y: -5)
+                        AsyncImage(url: book.coverImageURL) { phase in
+                            switch phase {
+                            case .empty:
+                                ProgressView()
+                                    .frame(width: size.width / 2, height: size.height)
+                                    .background(Color.gray.opacity(0.2))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: size.width / 2, height: size.height)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .shadow(color: .black.opacity(0.1), radius: 5, x: 5, y: 5)
+                                    .shadow(color: .black.opacity(0.1), radius: 5, x: -5, y: -5)
+                            case .failure:
+                                // Fallback view if the image fails to load
+                                Image(systemName: "photo")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: size.width / 2, height: size.height)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .foregroundColor(.gray)
+                                    .background(Color.gray.opacity(0.2))
+                                    .shadow(color: .black.opacity(0.1), radius: 5, x: 5, y: 5)
+                                    .shadow(color: .black.opacity(0.1), radius: 5, x: -5, y: -5)
+                            @unknown default:
+                                Image(systemName: "photo")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: size.width / 2, height: size.height)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .foregroundColor(.gray)
+                                    .background(Color.gray.opacity(0.2))
+                                    .shadow(color: .black.opacity(0.1), radius: 5, x: 5, y: 5)
+                                    .shadow(color: .black.opacity(0.1), radius: 5, x: -5, y: -5)
+                            }
+                        }
+                        .matchedGeometryEffect(id: book.id, in: animation)
+
+
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -110,12 +146,15 @@ struct BookScrollView_Previews: PreviewProvider {
     @State static var showDetailView = false
     @State static var selectedBook: Book? = nil
     @State static var animateCurrentBook = false
+    @State static var bookResults: [Book] = []
+
     
     static var previews: some View {
         BookScrollView(
             showDetailView: $showDetailView,
             selectedBook: $selectedBook,
             animateCurrentBook: $animateCurrentBook,
+            bookResults: $bookResults,
             animation: animation
         )
     }

@@ -13,15 +13,20 @@ struct DiscoverView: View {
     @State private var activeTab: DiscoverTab = .trending
     @State private var isSearching: Bool = false
     @State private var showDetailView: Bool = false
+    @State private var bookResults: [Book] = []
     @State private var selectedBook: Book?
     @State private var animateCurrentBook: Bool = false
     @FocusState private var isTyping: Bool
     @Environment(\.colorScheme) private var scheme
     @Namespace private var animation
     
+    private let apiManager = GoogleBooksAPIManager()
+    @State private var debounceTimer: Timer?
+
+    
     var body: some View {
         ScrollView(.vertical) {
-            BookScrollView(showDetailView: $showDetailView, selectedBook: $selectedBook, animateCurrentBook: $animateCurrentBook, animation: animation)
+            BookScrollView(showDetailView: $showDetailView, selectedBook: $selectedBook, animateCurrentBook: $animateCurrentBook, bookResults: $bookResults, animation: animation)
             .safeAreaPadding(15)
             .safeAreaInset(edge: .top, spacing: 0) {
                 ExpandableNavigationBar()
@@ -75,12 +80,14 @@ struct DiscoverView: View {
                             }
                         }
                     
-                    TextField("Search for a book", text: $searchText) {
-                        withAnimation {
-                            isSearching = true
+                    TextField("Search for a book", text: $searchText)
+                        .focused($isTyping)
+                        .padding()
+                        .onChange(of: searchText) {
+                            debounceSearch()
                         }
-                    }
-                    .focused($isTyping)
+                    
+                    
                     
                     if isTyping {
                         Button {
@@ -152,7 +159,41 @@ struct DiscoverView: View {
         .padding(.bottom, 10)
         .padding(.bottom, isTyping ? -65 : 0)
     }
-}
+    
+    // Debounced Search Function
+    private func debounceSearch() {
+        // Invalidate any existing timer
+        debounceTimer?.invalidate()
+        
+        // Set up a new timer to trigger performSearch after 2 seconds
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
+            performSearch()
+        }
+    }
+
+    // Perform Search
+    private func performSearch() {
+        guard !searchText.isEmpty else {
+            bookResults = []
+            return
+        }
+        withAnimation {
+            isSearching = true
+        }
+        apiManager.searchBooksByTitle(searchText) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let books):
+                    withAnimation(.bouncy) {
+                        bookResults = books
+                    }
+                case .failure(let error):
+                    print("Error searching for books: \(error.localizedDescription)")
+                    bookResults = []
+                }
+            }
+        }
+    }}
 
 struct CustomScrollTargetBehavior: ScrollTargetBehavior {
     func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
